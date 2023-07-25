@@ -1,117 +1,65 @@
 import fs from 'fs'
+import { Flipbook } from './flipbook.js'
+
+const colors = {
+    white: '\x1b[37m',
+    green: '\x1b[32m'
+}
 
 const getTitle = () => {
     const title = fs.readFileSync("assets/title.txt").toString()
-    return '\x1b[37m' + title
+    return colors.white + title
 }
 
 const getCar = () => {
-    return '\x1b[32m' + fs.readFileSync("assets/car.txt").toString()
+    return colors.green + fs.readFileSync("assets/car.txt").toString()
 }
 
 
-class Canva {
+const anchors = (str) => {
+    const splittedStr = str.split('\n')
+    const strH = splittedStr.length
+    const strW = splittedStr[0].length
 
-    #FPS = 30;
-    #fpsClockCounter = 0;
-    #animatedComponents = [];
-    #components = [];
-
-    constructor() {
-        this.#cleanCanva()
-        this.#fpsClockCounter = 0;
+    return {
+        centerX: Math.floor(strH / 2),
+        centerY: Math.floor(strW / 2),
+        height: strH,
+        width: strW
     }
-
-    #cleanCanva() {
-        this.canvas = []
-        for (let i = 0; i < process.stdout.rows; i++) {
-            this.canvas.push([...Array(process.stdout.columns)].map(_ => " "))
-        }
-    }
-
-    place(str, position) {
-        this.#components.push({ item: str, position })
-        return this
-    }
-
-    placeAnimated(str, animation) {
-        this.#animatedComponents.push({ item: str, animation })
-        return this
-    }
-
-    #placeComponents() {
-        this.#components.forEach(component => {
-            const { item, position: { x, y } } = component
-            const strLines = item.split('\n')
-
-            for (let i = 0; i < strLines.length; i++) {
-                for (let j = 0; j < strLines[i].length; j++) {
-                    this.canvas[x + i][y + j] = strLines[i][j]
-                }
-            }
-            return this;
-        })
-    }
-
-    #placeAnimatedComponents() {
-        this.#animatedComponents.forEach(({ item, animation }) => {
-            const { from, to } = animation
-
-            const { x: xStep, y: yStep } = {
-                x: Math.abs(from.x > to.x ? to.x - from.x : from.x - to.x) / this.#FPS,
-                y: Math.abs(from.y > to.y ? to.y - from.y : from.y - to.y) / this.#FPS,
-            }
-
-            const { x, y } = {
-                x: from.x + this.#fpsClockCounter * xStep,
-                y: from.y + this.#fpsClockCounter * yStep,
-            }
-
-            const strLines = item.split('\n')
-
-            for (let i = 0; i < strLines.length; i++) {
-                for (let j = 0; j < strLines[i].length; j++) {
-                    this.canvas[x + i][y + j] = strLines[i][j]
-                }
-            }
-            return this;
-        })
-    }
-
-    render() {
-        const move = () => {
-            this.#cleanCanva()
-
-            this.#fpsClockCounter++;
-
-            if (this.#fpsClockCounter === this.#FPS) {
-                this.#fpsClockCounter = 0;
-            }
-
-            this.#placeAnimatedComponents();
-            this.#placeComponents();
-
-            process.stdout.write('\x1B[2J\x1B[H');
-            for (let i = 0; i < this.canvas.length; i++) {
-                console.log(this.canvas[i].join(''))
-            }
-        }
-
-        setInterval(move, 1000 / this.#FPS)
-    }
-
 }
 
+const main = () => {
 
-const canva = new Canva();
 
+    const dimensions = {
+        width: process.stdout.columns,
+        heigth: process.stdout.rows,
+        centerX: process.stdout.columns / 2,
+        centerY: process.stdout.rows / 2,
+    }
 
-canva
-    .place(getTitle(), { x: 1, y: 0 })
-    .placeAnimated(getCar(), {
-        from: { x: 10, y: 0 },
-        to: { x: 10, y: 60 },
-    })
-    .render()
+    const title = getTitle();
+    const car = getCar();
 
+    const flipbook = new Flipbook({ fps: 25 });
+
+    flipbook
+        .place(title, { x: 1, y: dimensions.width / 2 - anchors(title).centerY })
+        .place("National", { x: 10, y: 10 })
+        .place(`I want to`, { x: 11, y: 10 })
+        .placeAnimated(car, {
+            from: {
+                x: dimensions.heigth - anchors(car).height,
+                y: 0
+            },
+            to: {
+                x: dimensions.heigth - anchors(car).height,
+                y: 50
+            },
+        })
+        .render()
+}
+
+main()
 
