@@ -35,6 +35,8 @@ const dimensions = {
     centerY: Math.floor(process.stdout.columns / 2),
 }
 
+const delay = (time = 1000) => new Promise(r => setTimeout(r, time))
+
 export class Flipbook {
 
     #page: string[][] = [];
@@ -59,6 +61,7 @@ export class Flipbook {
     #calculateAnchors(str: string) {
         const splittedStr = str.split('\n')
         const strH = splittedStr.length
+
         const strW = splittedStr[0].length
 
         return {
@@ -107,18 +110,43 @@ export class Flipbook {
     }
 
     place(item: string, style: Style) {
-        const styledItem = style?.color ? colors[style.color] + item + colors.white : item;
+        const styledItem = item.split("\n").map(line => {
+            // return line;
+            return style?.color ? colors[style.color] + line + colors.reset : line;
+        }).join("\n")
 
-        const { x, y } = this.#calculatePosition(item, style);
+        const { x, y } = this.#calculatePosition(styledItem, style);
 
         this.#components.push({ item: styledItem, style: { ...style, x, y } })
         return this
     }
 
     placeAnimated(item: string, animation: Animation) {
-        const styledItem = animation?.color ? colors[animation.color] + item + colors.white : item;
+
+        const styledItem = item.split("\n").map(line => {
+            // return line;
+            return animation?.color ? colors[animation.color] + line + colors.reset : line;
+        }).join("\n")
+
         this.#animatedComponents.push({ item: styledItem, animation })
         return this
+    }
+
+
+    #getVisibleLength(str: string) {
+        return str.replace(/\u001b\[\d{1,2}m/g, "").length;
+    }
+
+
+    #addToLine({ line, column, text }: { line: string[], column: number, text: string }) {
+        const lineHiddenText = line.length - this.#getVisibleLength(line.join(""));
+        const visibleLength = this.#getVisibleLength(text);
+        const space = text.length - visibleLength
+        const lineLength = line.length
+        line[column + lineHiddenText] = text
+        line = line.join("").split("")
+        line.length = lineLength + space
+        return line;
     }
 
     #placeComponents() {
@@ -127,9 +155,11 @@ export class Flipbook {
             const strLines = item.split('\n')
 
             for (let i = 0; i < strLines.length; i++) {
-                for (let j = 0; j < strLines[i].length; j++) {
-                    this.#page[x! + i][y! + j] = strLines[i][j]
-                }
+                this.#page[x! + i] = this.#addToLine({
+                    line: this.#page[x! + i],
+                    column: y!,
+                    text: strLines[i]
+                })
             }
             return this;
         })
@@ -157,34 +187,38 @@ export class Flipbook {
             const strLines = item.split('\n')
 
             for (let i = 0; i < strLines.length; i++) {
-                for (let j = 0; j < strLines[i].length; j++) {
-                    this.#page[x + i][y + j] = strLines[i][j]
-                }
+                this.#page[x! + i] = this.#addToLine({
+                    line: this.#page[x! + i],
+                    column: y!,
+                    text: strLines[i]
+                })
             }
             return this;
         })
     }
 
     render() {
-        const move = () => {
+        const move = async () => {
             this.#cleanCanva()
 
             this.#fpsClockCounter++;
 
             if (this.#fpsClockCounter === this.#FPS) {
+                await delay(5000);
                 this.#fpsClockCounter = 0;
             }
 
-            this.#placeAnimatedComponents();
             this.#placeComponents();
+            this.#placeAnimatedComponents();
 
             process.stdout.write('\x1B[2J\x1B[H');
             for (let i = 0; i < this.#page.length; i++) {
-                console.log(this.#page[i].join(''))
+                process.stdout.write(this.#page[i].join('') + "\n")
             }
+            this.render()
         }
 
-        setInterval(move, 1000 / this.#FPS)
+        setTimeout(move, 1000 / this.#FPS)
     }
 
 }

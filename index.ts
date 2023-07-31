@@ -1,5 +1,9 @@
 import fs from 'fs'
+import { colors } from './themes'
+
 import { Flipbook } from './flipbook'
+import chalk from 'chalk'
+
 
 const getTitle = () => {
     return fs.readFileSync("assets/title.txt").toString()
@@ -20,17 +24,16 @@ const main = () => {
     const car = getCar();
     const rocket = getRocket();
 
-    const flipbook = new Flipbook({ fps: 10 });
+    const flipbook = new Flipbook({ fps: 30 });
 
     flipbook
         .place(title, {
-            x: 1,
             horizontal: 'center',
             vertical: 'top',
-            color: 'white'
+            color: 'magenta'
         })
         .place("National", { x: 10, y: 10, color: "red" })
-        .place("National", { x: 10, y: 40, color: "blue" })
+        .place("National", { x: 10, y: 50, color: "red" })
         .placeAnimated(car, {
             color: 'green',
             from: {
@@ -45,8 +48,8 @@ const main = () => {
         .placeAnimated(rocket, {
             color: 'cyan',
             from: {
-                vertical: 'bottom',
                 horizontal: 'right',
+                vertical: 'bottom',
             },
             to: {
                 vertical: 'top',
