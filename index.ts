@@ -1,39 +1,81 @@
 import fs from 'fs'
-import { colors } from './themes'
-
 import { Flipbook } from './flipbook'
-import chalk from 'chalk'
+import { getAnchors } from './anchors'
 
 
-const getTitle = () => {
-    return fs.readFileSync("assets/title.txt").toString()
+const getAsset = (key: string) => {
+    return fs.readFileSync(`assets/${key}.txt`).toString()
 }
 
-const getCar = () => {
-    return fs.readFileSync("assets/car.txt").toString()
-}
-
-
-const getRocket = () => {
-    return fs.readFileSync("assets/rocket.txt").toString()
-}
 
 const main = () => {
 
-    const title = getTitle();
-    const car = getCar();
-    const rocket = getRocket();
+    const car = getAsset("car")
+    const title = getAsset("title")
+    const rocket = getAsset("rocket")
+    const national = getAsset("national")
+    const enterprise = getAsset("enterprise")
 
-    const flipbook = new Flipbook({ fps: 30 });
+    const flipbook = new Flipbook({ fps: 29 });
 
     flipbook
         .place(title, {
             horizontal: 'center',
-            vertical: 'top',
-            color: 'magenta'
+            vertical: 'center',
+            color: 'cyan',
         })
-        .place("National", { x: 10, y: 10, color: "red" })
-        .place("National", { x: 10, y: 50, color: "red" })
+        .place("The nerdola / The typescript wizard ", {
+            horizontal: 'center',
+            x: ({ centerX }) => centerX + Math.floor(title.split("\n").length / 2),
+            color: 'cyan',
+        })
+        .place("i use vim btw", {
+            horizontal: 'center',
+            x: ({ centerX }) => centerX + Math.floor(title.split("\n").length / 2) + 1,
+            color: 'cyan',
+        })
+        //         .placeAnimated(`I use vim btw
+        // i write some shit code that sometime is good
+        // Fail Fast, learn fast, Improve fast.
+        // It's not my fault that things are complex
+        // `, {
+        //             from: {
+        //                 horizontal: 'left',
+        //                 vertical: 'top',
+        //                 hide: true,
+        //             },
+        //             to: {
+        //                 horizontal: 'left',
+        //                 vertical: 'top',
+        //                 hide: false,
+        //             }
+        //         })
+        .placeAnimated(national, {
+            color: 'green',
+            from: {
+                y: 0,
+                x: 40,
+                hide: true,
+            },
+            to: {
+                y: 10,
+                x: 40,
+                hide: false,
+            }
+        })
+        .placeAnimated(enterprise, {
+            color: 'green',
+            from: {
+                y: getAnchors(national).centerY ,
+                x: 40 + getAnchors(national).height ,
+                hide: true,
+            },
+            to: {
+                y: getAnchors(national).centerY ,
+                x: 40 + getAnchors(national).height ,
+                hide: false,
+            }
+        })
         .placeAnimated(car, {
             color: 'green',
             from: {
@@ -46,7 +88,7 @@ const main = () => {
             },
         })
         .placeAnimated(rocket, {
-            color: 'cyan',
+            color: 'yellow',
             from: {
                 horizontal: 'right',
                 vertical: 'bottom',
